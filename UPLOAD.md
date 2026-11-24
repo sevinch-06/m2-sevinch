@@ -1,71 +1,71 @@
-# M2 (Sevinch): week 1–2 face and phone approval files, how to upload
+# M2 (Sevinch): week 3, mock face and phone approval, how to upload
 
-This zip contains your week 1–2 deliverables from `docs/team-plan.md` §4.2. **Read every file before you
-upload it.** You must be able to explain each line at the defense. Change anything you disagree with.
+Your week 3 task: **mock face and mock phone-approval factors**. A mock looks exactly like your real factor
+from the outside (same name, same `start()` data, same result details), but passes or fails on command, so
+Alisher can build the login flow before the real face code exists. **Read every file before you upload it.**
+
+## Before you start: two things must be on `main`
+
+1. **Your week 1–2 work** (the `m2-face-prototype` zip from last week). Upload and merge it first if you
+   have not yet.
+2. **Alisher's PR `m4-week3-foundation`** (adds `backend/app/factors/base.py`). Your mocks import from it.
+   Check with `git pull` and then `dir backend\app\factors\base.py` (Windows) or `ls backend/app/factors/base.py`.
 
 ## What is inside
 
-| File | Task (team-plan §4.2) |
+| File | What it is |
 |---|---|
-| `backend/app/factors/face/experiments/requirements.txt`, `README.md` | 1. Install InsightFace + MediaPipe (with Windows notes) |
-| `backend/app/factors/face/experiments/compare.py` | 2. Face-comparison demo |
-| `backend/app/factors/face/experiments/webcam_demo.py`, `liveness.py` | 3. *Nice to have:* webcam demo with similarity, EAR, blinks, brightness |
-| `backend/app/factors/face/DESIGN.md` | 4. Enrollment / verification / threshold design; §7 = answer to open question **7** (task 6) |
-| `backend/app/factors/phone_approval/DESIGN.md` | 5. Phone approval design |
+| `backend/app/factors/face/mock.py` | `MockFace`: needs a camera (`has_camera`); `start()` returns the frame settings from your DESIGN.md; result context `light` + `liveness_passed`; supports dim light, failed liveness (printed photo) and "no face" (`unavailable` + `reason: no_face`) |
+| `backend/app/factors/phone_approval/mock.py` | `MockPhoneApproval`: laptop only; `start()` returns a fake QR URL + `expires_in: 60`; approve, deny (`cancelled` + `decision: denied`) and expiry (`timeout`) |
+| `backend/app/factors/face/__init__.py`, `phone_approval/__init__.py`, `backend/tests/factors/__init__.py` | Empty files that make the folders Python packages |
+| `backend/tests/factors/test_m2_mocks.py` | 8 tests |
 
-**Still to do by you (task 2 "done when"):** run `compare.py` on at least 3 *real* same-person pairs (two
-different photos of the same person) and 3 different-person pairs, e.g. photos of team members (with
-consent) or LFW, and add the numbers to the "Results so far" section of `experiments/README.md`. The
-first test only used one group photo (see README) because the LFW website was down.
+**How the request controls the mock** (also written at the top of each file):
 
-Also try `webcam_demo.py` yourself (needs a camera) and note what you see in DESIGN.md.
+| Payload | Face result | Phone result |
+|---|---|---|
+| `{"mock_accept": true}` | accepted, score 0.9 | approved, score 1.0 |
+| `{"mock_accept": false}` | rejected, score 0.1 | denied → `cancelled` |
+| `{"mock_accept": true, "mock_light": "dim"}` | accepted, `light: dim` | — |
+| `{"mock_accept": false, "mock_liveness": false}` | rejected, `liveness_passed: false` | — |
+| `{"mock_no_face": true}` | `unavailable`, `reason: no_face` | — |
+| `{"mock_error": "timeout"}` | `timeout` | `timeout`, not scanned |
 
-## Steps (Git Bash or PowerShell, in your `trustauth` folder)
+Both classes subclass `MockFactor` from `base.py`, which handles the shared parts (`mock_accept`,
+`mock_error`, `mock_duration_ms`, not enrolled, bad payload).
+
+## Steps
 
 ```sh
 git switch main
 git pull
-git switch -c m2-face-prototype
+git switch -c m2-mock-factors
 ```
 
-1. Unzip this file **into the repository root** (the folder with `CLAUDE.md`), so the files land in
-   `backend/app/factors/face/` and `backend/app/factors/phone_approval/`. Do not copy `UPLOAD.md` into the repo.
-2. Set up and test (first run downloads ~280 MB of model files):
+1. Unzip **into the repository root**. Do not copy `UPLOAD.md`.
+2. Test (needs the backend libraries once: `pip install -r backend/requirements.txt` in your `.venv`):
    ```sh
-   python -m venv .venv-face
-   .venv-face\Scripts\activate             # macOS/Linux: source .venv-face/bin/activate
-   pip install -r backend/app/factors/face/experiments/requirements.txt
-   python backend/app/factors/face/experiments/liveness.py
-   python backend/app/factors/face/experiments/compare.py datasets/<photo1>.jpg datasets/<photo2>.jpg datasets/<photo3>.jpg
-   python backend/app/factors/face/experiments/webcam_demo.py
+   cd backend
+   python -m pytest tests/factors/test_m2_mocks.py -q     # expected: 8 passed
+   python -m pytest -q                                     # whole backend: all pass
+   cd ..
    ```
-   Keep test photos in `datasets/`. That folder is git-ignored. **Never commit face images.**
-3. Check that **only** your files changed (no photos, no `.venv-face`, no `datasets/`):
-   ```sh
-   git status
-   ```
+3. `git status`: only the files above.
 4. Commit and push:
    ```sh
-   git add backend/app/factors/face backend/app/factors/phone_approval
-   git commit -m "Add face comparison prototype and face/phone approval designs"
-   git push -u origin m2-face-prototype
+   git add backend/app/factors/face backend/app/factors/phone_approval backend/tests/factors
+   git commit -m "Add mock face and phone-approval factors"
+   git push -u origin m2-mock-factors
    ```
-5. On GitHub, open a Pull Request from `m2-face-prototype` to `main`, paste the description below, and
-   squash-merge it.
+5. Open the PR, paste the description below, **Squash and merge**.
 
 ## Pull request description (copy)
 
 ```markdown
-## M2 week 1–2: face prototype and designs
+## M2 week 3: mock face and phone approval
 
-- [x] 1. InsightFace + MediaPipe install: requirements.txt + README with Windows notes
-- [x] 2. compare.py prints cosine similarity (results table in experiments/README.md)
-- [x] 3. webcam_demo.py: live similarity, EAR, blink count, brightness
-- [x] 4. face/DESIGN.md: enrollment, verification, threshold method, liveness, light check, payloads, privacy
-- [x] 5. phone_approval/DESIGN.md: sequence diagram, token rules, payloads, WebSocket messages, attack notes
-- [x] 6. Interface review: answer to open question 7 in face/DESIGN.md §7; face context keys confirmed
-
-No datasets, face images, embeddings or secrets in this PR.
-
-Proposals for interface v0.2: face/DESIGN.md §8 (`no_face` error code, `light_hint`), phone_approval/DESIGN.md §9.
+- [x] MockFace: camera required; frame settings; light, liveness, no-face cases
+- [x] MockPhoneApproval: laptop only; fake QR; approve / deny / expire
+- [x] Both follow base.py (interface v0.2) and subclass MockFactor
+- [x] Tests: 8 passed
 ```
