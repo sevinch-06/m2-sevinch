@@ -1,0 +1,8 @@
+# Face experiments only (NOT the backend Docker image). CPU only, no GPU needed.
+# Versions tested together on Windows 11, Python 3.13 (pip installed prebuilt wheels, no compiler needed).
+# If pip tries to build insightface from source on Python 3.11, see README.md "Windows notes".
+insightface==2.1
+onnxruntime==1.32.0
+opencv-python==5.1.0.95
+mediapipe==1.2.3
+numpy==2.5.5
